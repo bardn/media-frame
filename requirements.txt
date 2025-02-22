@@ -1,0 +1,6 @@
+requests
+paho-mqtt
+rgbmatrix
+Pillow
+pydantic
+python-dotenv
