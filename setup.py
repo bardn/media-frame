@@ -1,113 +1,108 @@
 import os
+import sys
+import webbrowser
 import requests
-import time
-from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 
-# Load environment variables from the .env file
+# Load .env file
 load_dotenv()
 
-def prompt_for_input(prompt):
-    return input(prompt).strip()
+def get_input(prompt, env_var=None):
+    if env_var and os.getenv(env_var):
+        return os.getenv(env_var)
+    return input(prompt)
 
-def create_env_file():
-    print("Ensure you have your .env file with the following variables:")
-    print("SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, TRAKT_USERNAME, TRAKT_CLIENT_ID, TRAKT_CLIENT_SECRET, TRAKT_REDIRECT_URI, TMDB_API_KEY")
-    print("Once you have your .env file set up, the script will automatically fetch and refresh tokens.")
+def create_oauth_url(client_id, redirect_uri):
+    # This is the URL format for Trakt's OAuth authorization page
+    return f"https://trakt.tv/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}"
 
-def get_authorization_code(client_id, redirect_uri):
-    auth_url = (
-        f"https://trakt.tv/oauth/authorize?response_type=code"
-        f"&client_id={client_id}"
-        f"&redirect_uri={redirect_uri}"
-    )
-    print(f"Please go to this URL and authorize the app: {auth_url}")
-    
-    full_redirect_url = input("Enter the full redirected URL: ")
-    
-    parsed_url = urlparse(full_redirect_url)
-    authorization_code = parse_qs(parsed_url.query).get('code', [None])[0]
-    
-    if not authorization_code:
-        raise ValueError("Authorization code not found in the URL")
-    
-    return authorization_code
-
-def exchange_code_for_token(client_id, client_secret, redirect_uri, code):
-    token_url = 'https://trakt.tv/oauth/token'
+def get_trakt_tokens(client_id, client_secret, redirect_uri, auth_code):
+    # Endpoint to exchange authorization code for access and refresh tokens
+    token_url = "https://trakt.tv/oauth/token"
+    headers = {
+        'Content-Type': 'application/json',
+    }
     data = {
-        'code': code,
+        'code': auth_code,
         'client_id': client_id,
         'client_secret': client_secret,
         'redirect_uri': redirect_uri,
-        'grant_type': 'authorization_code'
+        'grant_type': 'authorization_code',
     }
-    response = requests.post(token_url, data=data)
-    token_data = response.json()
-    
-    access_token = token_data.get('access_token')
-    refresh_token = token_data.get('refresh_token')
-    
-    return access_token, refresh_token
 
-def save_tokens(access_token, refresh_token):
-    # Save the tokens back to the .env file
-    with open('.env', 'a') as f:
-        f.write(f"\nTRAKT_ACCESS_TOKEN={access_token}")
-        f.write(f"\nTRAKT_REFRESH_TOKEN={refresh_token}")
-    
-    print("Tokens have been saved to the .env file.")
+    response = requests.post(token_url, json=data, headers=headers)
 
-def refresh_access_token(client_id, client_secret, redirect_uri, refresh_token):
-    token_url = 'https://trakt.tv/oauth/token'
-    data = {
-        'refresh_token': refresh_token,
-        'client_id': client_id,
-        'client_secret': client_secret,
-        'redirect_uri': redirect_uri,
-        'grant_type': 'refresh_token'
-    }
-    response = requests.post(token_url, data=data)
-    token_data = response.json()
-    
-    new_access_token = token_data.get('access_token')
-    new_refresh_token = token_data.get('refresh_token')
+    if response.status_code == 200:
+        tokens = response.json()
+        access_token = tokens.get('access_token')
+        refresh_token = tokens.get('refresh_token')
 
-    return new_access_token, new_refresh_token
+        # Save the tokens to the .env file
+        with open('.env', 'a') as f:
+            f.write(f"\nTRAKT_ACCESS_TOKEN={access_token}\n")
+            f.write(f"TRAKT_REFRESH_TOKEN={refresh_token}\n")
+
+        print(f"Successfully saved tokens to .env. Access Token: {access_token}\n")
+    else:
+        print("Failed to get tokens. Please check your credentials and authorization code.")
+        print(f"Response: {response.text}")
+        sys.exit(1)
+
+def populate_env():
+    # Collect all necessary environment variables
+    spotify_client_id = get_input("Enter your Spotify Client ID: ", "SPOTIFY_CLIENT_ID")
+    spotify_client_secret = get_input("Enter your Spotify Client Secret: ", "SPOTIFY_CLIENT_SECRET")
+    spotify_access_token = get_input("Enter your Spotify Access Token: ", "SPOTIFY_ACCESS_TOKEN")
+    spotify_refresh_token = get_input("Enter your Spotify Refresh Token: ", "SPOTIFY_REFRESH_TOKEN")
+
+    trakt_client_id = get_input("Enter your Trakt Client ID: ", "TRAKT_CLIENT_ID")
+    trakt_client_secret = get_input("Enter your Trakt Client Secret: ", "TRAKT_CLIENT_SECRET")
+    trakt_redirect_uri = get_input("Enter your Trakt Redirect URI: ", "TRAKT_REDIRECT_URI")
+
+    tmdb_api_key = get_input("Enter your TMDb API Key: ", "TMDB_API_KEY")
+
+    mqtt_broker = get_input("Enter your MQTT Broker IP: ", "MQTT_BROKER")
+    mqtt_port = get_input("Enter your MQTT Broker Port: ", "MQTT_PORT")
+    mqtt_topic = get_input("Enter your MQTT Topic: ", "MQTT_TOPIC")
+
+    # Write all values to .env file
+    with open('.env', 'w') as f:
+        f.write(f"SPOTIFY_CLIENT_ID={spotify_client_id}\n")
+        f.write(f"SPOTIFY_CLIENT_SECRET={spotify_client_secret}\n")
+        f.write(f"SPOTIFY_ACCESS_TOKEN={spotify_access_token}\n")
+        f.write(f"SPOTIFY_REFRESH_TOKEN={spotify_refresh_token}\n")
+        f.write(f"TRAKT_CLIENT_ID={trakt_client_id}\n")
+        f.write(f"TRAKT_CLIENT_SECRET={trakt_client_secret}\n")
+        f.write(f"TRAKT_REDIRECT_URI={trakt_redirect_uri}\n")
+        f.write(f"TMDB_API_KEY={tmdb_api_key}\n")
+        f.write(f"MQTT_BROKER={mqtt_broker}\n")
+        f.write(f"MQTT_PORT={mqtt_port}\n")
+        f.write(f"MQTT_TOPIC={mqtt_topic}\n")
+    
+    print("\nAll necessary environment variables have been written to .env.")
 
 def main():
-    print("Welcome to the Trakt OAuth setup script.")
-
-    # Retrieve values from the .env file
-    trakt_username = os.getenv("TRAKT_USERNAME")
-    client_id = os.getenv("TRAKT_CLIENT_ID")
-    client_secret = os.getenv("TRAKT_CLIENT_SECRET")
-    redirect_uri = os.getenv("TRAKT_REDIRECT_URI")
-    tmdb_api_key = os.getenv("TMDB_API_KEY")
-
-    if not all([trakt_username, client_id, client_secret, redirect_uri, tmdb_api_key]):
-        print("Missing environment variables. Please ensure your .env file is set up properly.")
-        return
-
-    # Prompt user if the .env file isn't properly set up
-    if not os.getenv("TRAKT_ACCESS_TOKEN") or not os.getenv("TRAKT_REFRESH_TOKEN"):
-        print("OAuth tokens are not yet set. Proceeding with authorization...")
-        authorization_code = get_authorization_code(client_id, redirect_uri)
-        access_token, refresh_token = exchange_code_for_token(client_id, client_secret, redirect_uri, authorization_code)
-        save_tokens(access_token, refresh_token)
-    else:
-        print("OAuth tokens are already available in the .env file.")
+    print("Welcome to the Media Frame Setup!")
     
-    # Optionally refresh the token after some time
-    print("Waiting for 5 seconds before refreshing token...")
-    time.sleep(5)
-    
-    refresh_token = os.getenv("TRAKT_REFRESH_TOKEN")
-    if refresh_token:
-        new_access_token, new_refresh_token = refresh_access_token(client_id, client_secret, redirect_uri, refresh_token)
-        save_tokens(new_access_token, new_refresh_token)
-    else:
-        print("No refresh token found in .env. OAuth process will need to be re-run.")
+    # Populate all environment variables
+    populate_env()
 
-if __name__ == '__main__':
+    # Generate OAuth URL for Trakt authentication
+    trakt_client_id = os.getenv('TRAKT_CLIENT_ID')
+    trakt_redirect_uri = os.getenv('TRAKT_REDIRECT_URI')
+    oauth_url = create_oauth_url(trakt_client_id, trakt_redirect_uri)
+
+    print(f"\nPlease visit the following URL in your browser to authorize the application:")
+    print(oauth_url)
+
+    # Open the URL automatically in the browser
+    webbrowser.open(oauth_url)
+
+    # Wait for the user to enter the authorization code
+    auth_code = input("\nAfter authorization, you will be redirected to a page with a 'code' parameter in the URL. Please enter the 'code' here: ")
+
+    # Get the access and refresh tokens using the authorization code
+    get_trakt_tokens(trakt_client_id, os.getenv('TRAKT_CLIENT_SECRET'), trakt_redirect_uri, auth_code)
+
+if __name__ == "__main__":
     main()
