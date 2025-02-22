@@ -50,9 +50,9 @@ The .env file contains sensitive API credentials and configurations. To generate
 
 Run the setup.py script to automate the process:
 
-    Install dependencies.
-    Create and configure the .env file.
-    Run the OAuth authentication for Trakt and store OAuth tokens.
+Install dependencies.
+Create and configure the .env file.
+Run the OAuth authentication for Trakt and store OAuth tokens.
 ```
 python setup.py
 ```
