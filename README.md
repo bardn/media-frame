@@ -17,11 +17,12 @@ A smart media display system that integrates **Spotify**, **Trakt**, and **TMDb*
 
 ### **1. Clone the Repository**
 
-```bash
+```
 git clone https://github.com/bardn/media-frame.git
 cd media-frame
 '''
----bash
+
+---
 
 # Media Frame
 
