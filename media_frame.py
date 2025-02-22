@@ -1,13 +1,10 @@
+import os
+from dotenv import load_dotenv, set_key
 from api_client import APIClient
 from matrix_controller import MatrixController
 from image_manager import ImageManager
-from token_manager import TokenManager
+from token_manager import TokenManager, generate_trakt_token, generate_spotify_token
 from config import Config
-
-
-import os
-from dotenv import load_dotenv, set_key
-from token_manager import generate_trakt_token, generate_spotify_token  # Import the functions
 
 # Load environment variables
 load_dotenv()
