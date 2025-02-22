@@ -106,8 +106,8 @@ def main():
     print("Welcome to the Media Frame Setup!")
 
     # Ask if services should be enabled
-    use_trakt = get_input("Do you want to use Trakt? (yes/no): ").lower() == 'yes'
-    use_spotify = get_input("Do you want to use Spotify? (yes/no): ").lower() == 'yes'
+    use_trakt = get_input("Do you want to use Trakt? (y/n): ").lower() == 'y'
+    use_spotify = get_input("Do you want to use Spotify? (y/n): ").lower() == 'y'
 
     # Populate .env with basic credentials
     populate_env()
