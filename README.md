@@ -60,7 +60,7 @@ python setup.py
 
 If you prefer to manually configure the system, follow these steps:
 
-    Copy the .env.example file to .env:
+Copy the .env.example file to .env:
 ```
 cp .env.example .env
 ```
