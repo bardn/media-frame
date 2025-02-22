@@ -35,14 +35,14 @@ Follow the steps below to install and configure the Media Frame system.
 ```bash
 git clone https://github.com/yourusername/media-frame.git
 cd media-frame
-'''
+**```
 
 ### 2. Install Dependencies
 
 Install the required Python dependencies using pip:
 '''
 pip install -r requirements.txt
-'''
+**```
 ### 3. Set Up the .env File
 
 The .env file contains sensitive API credentials and configurations. To generate it, you can either use the provided setup script or manually configure it.
