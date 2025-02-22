@@ -33,4 +33,10 @@ def setup():
             print("Spotify token generation failed. Please check your credentials.")
             return
 
+    # Populate other values in .env (you can modify the rest of the configuration if needed)
+    # You can add additional logic to populate the .env file as required, or let the user enter values here.
+
     print("All necessary .env values have been written.")
+
+if __name__ == "__main__":
+    setup()
