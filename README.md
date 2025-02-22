@@ -126,9 +126,7 @@ sudo systemctl status media-frame.service
 
 ### Troubleshooting
 
-    If you experience issues with Trakt authentication, ensure that your TRAKT_REDIRECT_URI in .env matches the URI in your Trakt Developer account.
-    If the Spotify integration isn't working, check that your SPOTIFY_ACCESS_TOKEN is valid and hasn't expired. You may need to refresh your token.
-    Ensure that your MQTT broker is set up and configured correctly if you use it for communication with systems like Home Assistant.
+
 
 ### License
 
