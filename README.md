@@ -32,7 +32,7 @@ Follow the steps below to install and configure the Media Frame system.
 
 ### 1. Clone the Repository
 
-```bash
+```
 git clone https://github.com/yourusername/media-frame.git
 cd media-frame
 **```
