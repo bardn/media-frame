@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# This script will install the required dependencies and guide the user through the configuration process
+# This script will install the required dependencies, guide the user through the configuration process,
+# and set up the background service for the application.
 
 # Step 1: Install required packages
 echo "Installing dependencies..."
@@ -18,8 +19,16 @@ fi
 echo "Running setup script..."
 python setup.py
 
-# Step 4: Success message
-echo "Setup complete. Please review the .env file to ensure it contains your API keys and credentials."
+# Step 4: Install the service to run in the background
+echo "Installing systemd service..."
+sudo cp media-frame.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable media-frame.service
+sudo systemctl start media-frame.service
+
+# Step 5: Success message
+echo "Setup complete. The application is now running as a background service."
 
 # Optional: Provide a message for the next steps
-echo "You can now run the application with: python media-frame.py"
+echo "You can check the service status with: sudo systemctl status media-frame.service"
+echo "The application will automatically start on boot."
