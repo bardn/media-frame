@@ -35,14 +35,14 @@ Follow the steps below to install and configure the Media Frame system.
 ```
 git clone https://github.com/yourusername/media-frame.git
 cd media-frame
-**```
+```
 
 ### 2. Install Dependencies
 
 Install the required Python dependencies using pip:
-'''
+```
 pip install -r requirements.txt
-**```
+```
 ### 3. Set Up the .env File
 
 The .env file contains sensitive API credentials and configurations. To generate it, you can either use the provided setup script or manually configure it.
@@ -53,19 +53,19 @@ Run the setup.py script to automate the process:
     Install dependencies.
     Create and configure the .env file.
     Run the OAuth authentication for Trakt and store OAuth tokens.
-'''
+```
 python setup.py
-'''
+```
 ### Option 2: Manual Setup
 
 If you prefer to manually configure the system, follow these steps:
 
     Copy the .env.example file to .env:
-'''
+```
 cp .env.example .env
-'''
+```
 Edit the .env file with your credentials:
-'''
+```
 # Spotify API credentials
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
@@ -89,27 +89,27 @@ TRAKT_REFRESH_TOKEN=
 MQTT_BROKER=mqtt_broker_local_ip
 MQTT_PORT=mqtt_broker_port_number
 MQTT_TOPIC=homeassistant/matrix/brightness
-'''
+```
 Run setup.py to authenticate with Trakt and generate OAuth tokens:
-'''
+```
     python setup.py
-'''
+```
 ### 4. Running the Application
 
 Once everything is configured, you can run the application:
-'''
+```
 python media_frame.py
-'''
+```
 ### 5. Run as a Background Service (Optional)
 
 If you want the application to run automatically in the background, use the generate_service.py script to create a systemd service:
-'''
+```
 python generate_service.py
-'''
+```
 This will install the service and enable it to start on boot. You can check the status of the service with:
-'''
+```
 sudo systemctl status media-frame.service
-'''
+```
 ### File Overview
 
     media_frame.py: The main entry point of the application. Handles media display integration with Spotify, Trakt, and TMDb.
