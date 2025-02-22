@@ -2,6 +2,7 @@ import os
 import sys
 import webbrowser
 import requests
+from dotenv import load_dotenv
 
 def get_input(prompt):
     """Helper function to safely get user input."""
@@ -68,6 +69,9 @@ def get_trakt_tokens(client_id, client_secret, redirect_uri, auth_code):
             sys.exit(1)
 
 def main():
+    # Load environment variables from .env
+    load_dotenv()
+
     print("Welcome to the Media Frame Setup!")
 
     # Ask if services should be enabled
