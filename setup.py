@@ -17,7 +17,7 @@ def update_env_and_reload(key: str, value: str):
     set_key(".env", key, value)  # Update the .env file
     load_dotenv(override=True)  # Reload environment variables
 
-    # 🔹 Manually create Config to ensure updates are picked up
+    # ðŸ”¹ Manually create Config to ensure updates are picked up
     return Config(
         trakt_client_id=os.getenv("TRAKT_CLIENT_ID", ""),
         trakt_client_secret=os.getenv("TRAKT_CLIENT_SECRET", ""),
@@ -29,7 +29,7 @@ def setup():
 
     print("Welcome to the Media Frame Setup!")
 
-    # 🔹 Handle Trakt setup
+    # ðŸ”¹ Handle Trakt setup
     print("Do you want to use Trakt? (y/n): ", end="")
     use_trakt = input().strip().lower() == 'y'
     if use_trakt:
@@ -42,7 +42,7 @@ def setup():
         trakt_redirect_uri = input("Enter your Trakt Redirect URI: ").strip()
         config = update_env_and_reload("REDIRECT_URI", trakt_redirect_uri)
 
-        # 🔹 Debugging: Print values to ensure they are set
+        # ðŸ”¹ Debugging: Print values to ensure they are set
         print(f"DEBUG: Trakt Client ID = {config.trakt_client_id}")
         print(f"DEBUG: Trakt Redirect URI = {config.redirect_uri}")
 
@@ -54,13 +54,13 @@ def setup():
             authorization_code = extract_code_from_url(authorization_url)
             print(f"Extracted Authorization Code: {authorization_code}")
 
-            # 🔹 Use the latest config with the correct redirect_uri
+            # ðŸ”¹ Use the latest config with the correct redirect_uri
             token_manager = TokenManager(config)
             token_manager.generate_trakt_token(authorization_code)
         except ValueError as e:
             print(f"Error: {e}")
 
-    # 🔹 Handle Spotify setup
+    # ðŸ”¹ Handle Spotify setup
     print("Do you want to use Spotify? (y/n): ", end="")
     use_spotify = input().strip().lower() == 'y'
     if use_spotify:
@@ -73,7 +73,7 @@ def setup():
         token_manager = TokenManager(config)
         token_manager.generate_spotify_token()
 
-    print("✅ All necessary .env values have been written.")
+    print("âœ… All necessary .env values have been written.")
 
 if __name__ == "__main__":
     setup()
