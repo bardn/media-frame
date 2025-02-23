@@ -6,61 +6,59 @@ from image_manager import ImageManager
 from api_client import APIClient
 
 class MatrixController:
-    def __init__(self, api_client: APIClient, image_manager: ImageManager, config: Config):
+    def __init__(self, api_client: APIClient = None, image_manager: ImageManager = None, config: Config = None):
         self.api_client = api_client
-        self.image_manager = image_manager
-        self.config = config
+        self.image_manager = image_manager if image_manager else ImageManager()
+        self.config = config if config else Config()
         self.matrix = None
         self.matrix_lock = Lock()
         self.brightness = 20
-        self.mqtt_client = self._setup_mqtt()
+
+        # Check if MQTT should be used
+        self.use_mqtt = hasattr(self.config, "mqtt_broker") and hasattr(self.config, "mqtt_port")
+
+        if self.use_mqtt:
+            self.mqtt_client = self._setup_mqtt()
+        else:
+            print("MQTT not enabled, using default brightness.")
+
         self.setup_matrix()
 
-    def _setup_mqtt(self) -> mqtt.Client:
-        client = mqtt.Client()
-        client.on_connect = self._on_connect
-        client.on_message = self._on_message
-
-        try:
-            client.connect(self.config.mqtt_broker, self.config.mqtt_port, 60)
-            client.loop_start()
-        except Exception as e:
-            print(f"MQTT connection failed: {e}")
-
-        return client
-
-    def _on_connect(self, client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT broker")
-            client.subscribe(self.config.mqtt_topic)
-        else:
-            print(f"Failed to connect to MQTT broker: {rc}")
-
-    def _on_message(self, client, userdata, message):
-        try:
-            self.brightness = int(float(message.payload.decode()))
-            print(f"Brightness updated to: {self.brightness}")
-        except ValueError:
-            print("Invalid brightness value received")
-
     def setup_matrix(self):
+        """Initialize the LED matrix with given configurations."""
         options = RGBMatrixOptions()
         options.rows = 64
         options.cols = 64
         options.chain_length = 1
         options.parallel = 1
         options.hardware_mapping = 'adafruit-hat-pwm'
-        options.brightness = self.brightness
+        options.brightness = self.brightness  
         self.matrix = RGBMatrix(options=options)
 
-    def display_image(self, image):
-        if not image or not self.matrix:
-            return
+    def fetch_api_image(self):
+        """Try fetching an image from the API (Trakt, Spotify, etc.), or return None."""
+        if not self.api_client:
+            return None  # No API configured
+
+        try:
+            image_url = self.api_client.get_current_media_image()
+            if image_url:
+                return self.image_manager.fetch_image(image_url)
+        except Exception as e:
+            print(f"Error fetching image from API: {e}")
+
+        return None  # Return None if fetching fails
+
+    def display_image(self, image=None):
+        """Display an image, or fallback to clock if needed."""
+        if not image:
+            image = self.image_manager.generate_clock_image()  # Default to clock if no image
 
         with self.matrix_lock:
             try:
+                image = image.convert('RGB')  # Ensure proper format
                 self.matrix.brightness = self.brightness
-                self.matrix.SetImage(image.convert('RGB'))
+                self.matrix.SetImage(image)
             except Exception as e:
                 print(f"Failed to display image: {e}")
                 self.matrix.Clear()
