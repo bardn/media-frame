@@ -24,7 +24,7 @@ def setup():
     print("Welcome to the Media Frame Setup!")
 
     # ?? Handle Trakt setup
-    print("Do you want to use Trakt? (y/n): ", end="")
+    print("Do you want to use Trakt and TMDB? (y/n): ", end="")
     use_trakt = input().strip().lower() == 'y'
     update_env_and_reload("USE_TRAKT", str(use_trakt).lower())
 
@@ -37,6 +37,9 @@ def setup():
 
         trakt_redirect_uri = input("Enter your Trakt Redirect URI: ").strip()
         config = update_env_and_reload("TRAKT_REDIRECT_URI", trakt_redirect_uri)
+
+        tmdb_api_key = input("Enter your TMDB Api Key: ").strip()
+        config = update_env_and_reload("TMDB_API_KEY", tmdb_api_key)
 
         print(f"Authorize here: https://trakt.tv/oauth/authorize?client_id={config.trakt_client_id}&redirect_uri={config.trakt_redirect_uri}&response_type=code")
 
