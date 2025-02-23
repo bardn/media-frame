@@ -16,22 +16,18 @@ def update_env_and_reload(key: str, value: str):
     """Update .env, reload it, and return a fresh Config instance."""
     set_key(".env", key, value)  # Update the .env file
     load_dotenv(override=True)  # Reload environment variables
-
-    # ðŸ”¹ Manually create Config to ensure updates are picked up
-    return Config(
-        trakt_client_id=os.getenv("TRAKT_CLIENT_ID", ""),
-        trakt_client_secret=os.getenv("TRAKT_CLIENT_SECRET", ""),
-        redirect_uri=os.getenv("REDIRECT_URI", "")
-    )
+    return Config()
 
 def setup():
     load_dotenv()  # Initial load
 
     print("Welcome to the Media Frame Setup!")
 
-    # ðŸ”¹ Handle Trakt setup
+    # ?? Handle Trakt setup
     print("Do you want to use Trakt? (y/n): ", end="")
     use_trakt = input().strip().lower() == 'y'
+    update_env_and_reload("USE_TRAKT", str(use_trakt).lower())
+
     if use_trakt:
         trakt_client_id = input("Enter your Trakt Client ID: ").strip()
         config = update_env_and_reload("TRAKT_CLIENT_ID", trakt_client_id)
@@ -40,13 +36,9 @@ def setup():
         config = update_env_and_reload("TRAKT_CLIENT_SECRET", trakt_client_secret)
 
         trakt_redirect_uri = input("Enter your Trakt Redirect URI: ").strip()
-        config = update_env_and_reload("REDIRECT_URI", trakt_redirect_uri)
+        config = update_env_and_reload("TRAKT_REDIRECT_URI", trakt_redirect_uri)
 
-        # ðŸ”¹ Debugging: Print values to ensure they are set
-        print(f"DEBUG: Trakt Client ID = {config.trakt_client_id}")
-        print(f"DEBUG: Trakt Redirect URI = {config.redirect_uri}")
-
-        print(f"Authorize here: https://trakt.tv/oauth/authorize?client_id={config.trakt_client_id}&redirect_uri={config.redirect_uri}&response_type=code")
+        print(f"Authorize here: https://trakt.tv/oauth/authorize?client_id={config.trakt_client_id}&redirect_uri={config.trakt_redirect_uri}&response_type=code")
 
         # Get the authorization URL and extract the authorization code
         authorization_url = input("Enter the full URL after authorization: ").strip()
@@ -54,15 +46,17 @@ def setup():
             authorization_code = extract_code_from_url(authorization_url)
             print(f"Extracted Authorization Code: {authorization_code}")
 
-            # ðŸ”¹ Use the latest config with the correct redirect_uri
+            # ?? Use the latest config with the correct redirect_uri
             token_manager = TokenManager(config)
             token_manager.generate_trakt_token(authorization_code)
         except ValueError as e:
             print(f"Error: {e}")
 
-    # ðŸ”¹ Handle Spotify setup
+    # ?? Handle Spotify setup
     print("Do you want to use Spotify? (y/n): ", end="")
     use_spotify = input().strip().lower() == 'y'
+    update_env_and_reload("USE_SPOTIFY", str(use_spotify).lower())
+
     if use_spotify:
         spotify_client_id = input("Enter your Spotify Client ID: ").strip()
         config = update_env_and_reload("SPOTIFY_CLIENT_ID", spotify_client_id)
@@ -70,10 +64,38 @@ def setup():
         spotify_client_secret = input("Enter your Spotify Client Secret: ").strip()
         config = update_env_and_reload("SPOTIFY_CLIENT_SECRET", spotify_client_secret)
 
-        token_manager = TokenManager(config)
-        token_manager.generate_spotify_token()
+        spotify_redirect_uri = input("Enter your Spotify Redirect URI: ").strip()
+        config = update_env_and_reload("SPOTIFY_REDIRECT_URI", spotify_redirect_uri)
 
-    print("âœ… All necessary .env values have been written.")
+        print(f"Authorize here: https://accounts.spotify.com/authorize?client_id={config.spotify_client_id}&redirect_uri={config.spotify_redirect_uri}&response_type=code")
+
+        # Get the authorization URL and extract the authorization code
+        authorization_url = input("Enter the full URL after authorization: ").strip()
+        try:
+            authorization_code = extract_code_from_url(authorization_url)
+            print(f"Extracted Authorization Code: {authorization_code}")
+
+            # ?? Use the latest config with the correct redirect_uri
+            token_manager = TokenManager(config)
+            token_manager.generate_spotify_token(authorization_code)
+        except ValueError as e:
+            print(f"Error: {e}")
+
+    print("Do you want to use MQTT? (y/n): ", end="")
+    use_mqtt = input().strip().lower() == 'y'
+    update_env_and_reload("USE_MQTT", str(use_mqtt).lower())
+
+    if use_mqtt:
+        mqtt_broker = input("Enter your MQTT Broker: ").strip()
+        config = update_env_and_reload("MQTT_BROKER", mqtt_broker)
+
+        mqtt_port = input("Enter your MQTT Port: ").strip()
+        config = update_env_and_reload("MQTT_PORT", mqtt_port)
+
+        mqtt_topic = input("Enter your MQTT Topic: ").strip()
+        config = update_env_and_reload("MQTT_TOPIC", mqtt_topic)
+
+    print("? All necessary .env values have been written.")
 
 if __name__ == "__main__":
     setup()
