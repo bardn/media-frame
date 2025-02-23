@@ -33,24 +33,17 @@ class TokenManager:
             # Store tokens in .env
             set_key(".env", "TRAKT_ACCESS_TOKEN", self.config.trakt_access_token)
             set_key(".env", "TRAKT_REFRESH_TOKEN", self.config.trakt_refresh_token)
-            print("Trakt access token generated and stored in .env.")
+            print("âœ… Trakt access token generated and stored in .env.")
             return True
         else:
-            print(f"Trakt token generation failed: {response.status_code} {response.text}")
+            print(f"âŒ Trakt token generation failed: {response.status_code} {response.text}")
             return False
 
     def generate_spotify_token(self):
         token_url = 'https://accounts.spotify.com/api/token'
-        data = {
-            'grant_type': 'client_credentials'
-        }
-
-        # Using the same method as your working example to get credentials
-        client_id = self.config.spotify_client_id
-        client_secret = self.config.spotify_client_secret
-
+        data = {'grant_type': 'client_credentials'}
         headers = {
-            'Authorization': f"Basic {base64.b64encode(f'{client_id}:{client_secret}'.encode()).decode()}",
+            'Authorization': f"Basic {self._encode_spotify_credentials()}",
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
@@ -61,10 +54,10 @@ class TokenManager:
             self.config.spotify_access_token = data['access_token']
             # Store token in .env
             set_key(".env", "SPOTIFY_ACCESS_TOKEN", self.config.spotify_access_token)
-            print("Spotify access token generated and stored in .env.")
+            print("âœ… Spotify access token generated and stored in .env.")
             return True
         else:
-            print(f"Spotify token generation failed: {response.status_code} {response.text}")
+            print(f"âŒ Spotify token generation failed: {response.status_code} {response.text}")
             return False
 
     def refresh_trakt_token(self):
@@ -87,10 +80,10 @@ class TokenManager:
             # Store updated tokens in .env
             set_key(".env", "TRAKT_ACCESS_TOKEN", self.config.trakt_access_token)
             set_key(".env", "TRAKT_REFRESH_TOKEN", self.config.trakt_refresh_token)
-            print("Trakt access token refreshed and stored in .env.")
+            print("âœ… Trakt access token refreshed and stored in .env.")
             return True
         else:
-            print(f"Trakt token refresh failed: {response.status_code} {response.text}")
+            print(f"âŒ Trakt token refresh failed: {response.status_code} {response.text}")
             return False
 
     def refresh_spotify_token(self):
@@ -100,13 +93,8 @@ class TokenManager:
             'grant_type': 'refresh_token',
             'refresh_token': self.config.spotify_refresh_token
         }
-
-        # Using the same method as your working example to get credentials
-        client_id = self.config.spotify_client_id
-        client_secret = self.config.spotify_client_secret
-
         headers = {
-            'Authorization': f"Basic {base64.b64encode(f'{client_id}:{client_secret}'.encode()).decode()}",
+            'Authorization': f"Basic {self._encode_spotify_credentials()}",
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
@@ -120,8 +108,12 @@ class TokenManager:
             # Store updated tokens in .env
             set_key(".env", "SPOTIFY_ACCESS_TOKEN", self.config.spotify_access_token)
             set_key(".env", "SPOTIFY_REFRESH_TOKEN", self.config.spotify_refresh_token)
-            print("Spotify access token refreshed and stored in .env.")
+            print("âœ… Spotify access token refreshed and stored in .env.")
             return True
         else:
-            print(f"Spotify token refresh failed: {response.status_code} {response.text}")
+            print(f"âŒ Spotify token refresh failed: {response.status_code} {response.text}")
             return False
+
+    def _encode_spotify_credentials(self):
+        # Base64 encode Spotify client ID and secret for the authorization header
+        return base64.b64encode(f"{self.config.spotify_client_id}:{self.config.spotify_client_secret}".encode()).decode()
