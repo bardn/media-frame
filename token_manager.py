@@ -1,116 +1,119 @@
 import requests
 import base64
-from threading import Lock
-from typing import Optional
+from dotenv import set_key
 from config import Config
 
 class TokenManager:
     def __init__(self, config: Config):
         self.config = config
-        self._lock = Lock()
 
-    def refresh_spotify_token(self) -> bool:
-        with self._lock:
-            try:
-                response = requests.post(
-                    'https://accounts.spotify.com/api/token',
-                    data={
-                        'grant_type': 'refresh_token',
-                        'refresh_token': self.config.spotify_refresh_token
-                    },
-                    headers={
-                        'Authorization': f'Basic {base64.b64encode(f"{self.config.spotify_client_id}:{self.config.spotify_client_secret}".encode()).decode()}',
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
-                )
-                response.raise_for_status()
-                tokens = response.json()
-                self.config.spotify_access_token = tokens['access_token']
-                if 'refresh_token' in tokens:
-                    self.config.spotify_refresh_token = tokens['refresh_token']
-                return True
-            except Exception as e:
-                print(f"Spotify token refresh failed: {e}")
-                return False
+    def generate_trakt_token(self):
+        # Generate Trakt token using the authorization code
+        print("Please open this URL to authorize: https://trakt.tv/oauth/authorize")
+        print(f"Client ID: {self.config.trakt_client_id}")
+        print(f"Redirect URI: {self.config.redirect_uri}")
+        authorization_code = input("Enter the authorization code you received: ")
 
-    def refresh_trakt_token(self) -> bool:
-        with self._lock:
-            try:
-                response = requests.post(
-                    'https://trakt.tv/oauth/token',
-                    json={
-                        'refresh_token': self.config.trakt_refresh_token,
-                        'client_id': self.config.trakt_client_id,
-                        'client_secret': self.config.trakt_client_secret,
-                        'redirect_uri': self.config.redirect_uri,
-                        'grant_type': 'refresh_token'
-                    }
-                )
-                response.raise_for_status()
-                tokens = response.json()
-                self.config.trakt_access_token = tokens['access_token']
-                self.config.trakt_refresh_token = tokens.get('refresh_token', self.config.trakt_refresh_token)
-                return True
-            except Exception as e:
-                print(f"Trakt token refresh failed: {e}")
-                return False
+        response = requests.post(
+            'https://trakt.tv/oauth/token',
+            json={
+                'client_id': self.config.trakt_client_id,
+                'client_secret': self.config.trakt_client_secret,
+                'redirect_uri': self.config.redirect_uri,
+                'code': authorization_code,
+                'grant_type': 'authorization_code'
+            }
+        )
 
-    def generate_spotify_token(self, authorization_code: str) -> bool:
-        """Handles the generation of Spotify token using the authorization code."""
-        with self._lock:
-            try:
-                response = requests.post(
-                    'https://accounts.spotify.com/api/token',
-                    data={
-                        'grant_type': 'authorization_code',
-                        'code': authorization_code,
-                        'redirect_uri': self.config.redirect_uri
-                    },
-                    headers={
-                        'Authorization': f'Basic {base64.b64encode(f"{self.config.spotify_client_id}:{self.config.spotify_client_secret}".encode()).decode()}',
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
-                )
-                response.raise_for_status()
-                tokens = response.json()
-                self.config.spotify_access_token = tokens['access_token']
-                self.config.spotify_refresh_token = tokens.get('refresh_token', self.config.spotify_refresh_token)
-                return True
-            except Exception as e:
-                print(f"Spotify token generation failed: {e}")
-                return False
+        if response.status_code == 200:
+            data = response.json()
+            self.config.trakt_access_token = data['access_token']
+            self.config.trakt_refresh_token = data['refresh_token']
+            # Store tokens in .env
+            set_key(".env", "TRAKT_ACCESS_TOKEN", self.config.trakt_access_token)
+            set_key(".env", "TRAKT_REFRESH_TOKEN", self.config.trakt_refresh_token)
+            print("Trakt access token generated and stored in .env.")
+            return True
+        else:
+            print(f"Trakt token generation failed: {response.status_code}")
+            return False
 
-    def generate_trakt_token(self, authorization_code: str) -> bool:
-        """Handles the generation of Trakt token using the authorization code."""
-        with self._lock:
-            try:
-                response = requests.post(
-                    'https://trakt.tv/oauth/token',
-                    json={
-                        'code': authorization_code,
-                        'client_id': self.config.trakt_client_id,
-                        'client_secret': self.config.trakt_client_secret,
-                        'redirect_uri': self.config.redirect_uri,
-                        'grant_type': 'authorization_code'
-                    }
-                )
-                response.raise_for_status()
-                tokens = response.json()
-                self.config.trakt_access_token = tokens['access_token']
-                self.config.trakt_refresh_token = tokens.get('refresh_token', self.config.trakt_refresh_token)
-                return True
-            except Exception as e:
-                print(f"Trakt token generation failed: {e}")
-                return False
+    def generate_spotify_token(self):
+        # Generate Spotify token using client credentials
+        response = requests.post(
+            'https://accounts.spotify.com/api/token',
+            data={
+                'grant_type': 'client_credentials'
+            },
+            headers={
+                'Authorization': f"Basic {self._encode_spotify_credentials()}"
+            }
+        )
 
-    def get_authorization_code(self, service: str) -> str:
-        """Prompts the user to enter the authorization code from the service (Trakt/Spotify)."""
-        while True:
-            code = input(f"Enter the authorization code for {service}: ").strip()
-            if code.startswith("https://"):
-                # Extract only the code part from the URL
-                code = code.split('code=')[-1]  # Get the part after 'code='
-            if code:
-                return code
-            else:
-                print(f"Invalid code for {service}. Please try again.")
+        if response.status_code == 200:
+            data = response.json()
+            self.config.spotify_access_token = data['access_token']
+            # Store token in .env
+            set_key(".env", "SPOTIFY_ACCESS_TOKEN", self.config.spotify_access_token)
+            print("Spotify access token generated and stored in .env.")
+            return True
+        else:
+            print(f"Spotify token generation failed: {response.status_code}")
+            return False
+
+    def refresh_spotify_token(self):
+        # Refresh Spotify token using refresh token
+        response = requests.post(
+            'https://accounts.spotify.com/api/token',
+            data={
+                'grant_type': 'refresh_token',
+                'refresh_token': self.config.spotify_refresh_token
+            },
+            headers={
+                'Authorization': f"Basic {self._encode_spotify_credentials()}"
+            }
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            self.config.spotify_access_token = data['access_token']
+            if 'refresh_token' in data:
+                self.config.spotify_refresh_token = data['refresh_token']
+            # Store updated tokens in .env
+            set_key(".env", "SPOTIFY_ACCESS_TOKEN", self.config.spotify_access_token)
+            set_key(".env", "SPOTIFY_REFRESH_TOKEN", self.config.spotify_refresh_token)
+            print("Spotify access token refreshed and stored in .env.")
+            return True
+        else:
+            print(f"Spotify token refresh failed: {response.status_code}")
+            return False
+
+    def refresh_trakt_token(self):
+        # Refresh Trakt token using refresh token
+        response = requests.post(
+            'https://trakt.tv/oauth/token',
+            json={
+                'client_id': self.config.trakt_client_id,
+                'client_secret': self.config.trakt_client_secret,
+                'redirect_uri': self.config.redirect_uri,
+                'refresh_token': self.config.trakt_refresh_token,
+                'grant_type': 'refresh_token'
+            }
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            self.config.trakt_access_token = data['access_token']
+            self.config.trakt_refresh_token = data.get('refresh_token', self.config.trakt_refresh_token)
+            # Store updated tokens in .env
+            set_key(".env", "TRAKT_ACCESS_TOKEN", self.config.trakt_access_token)
+            set_key(".env", "TRAKT_REFRESH_TOKEN", self.config.trakt_refresh_token)
+            print("Trakt access token refreshed and stored in .env.")
+            return True
+        else:
+            print(f"Trakt token refresh failed: {response.status_code}")
+            return False
+
+    def _encode_spotify_credentials(self):
+        # Base64 encode Spotify client ID and secret for the authorization header
+        return base64.b64encode(f"{self.config.spotify_client_id}:{self.config.spotify_client_secret}".encode()).decode()
